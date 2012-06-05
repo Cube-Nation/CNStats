@@ -1,0 +1,9 @@
+author: DerFlash
+database: true
+description: Generate basic stats
+generator: http://dinnerbone.com/minecraft/tools/pluginator/
+main: de.derflash.plugins.cnstats.CNStats
+name: CNStats
+startup: postworld
+url: http://www.cube-nation.de/
+version: '1.0'
