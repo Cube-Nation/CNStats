@@ -5,7 +5,6 @@ import java.util.List;
 
 import javax.persistence.PersistenceException;
 
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class CNStats extends JavaPlugin {
@@ -15,11 +14,8 @@ public class CNStats extends JavaPlugin {
         System.out.println(this + " is now disabled!");
     }
 
-    public void onEnable() {
-        PluginDescriptionFile pdfFile = this.getDescription();
-        
+    public void onEnable() {        
         setupDatabase();
-        System.out.println(pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled!");
 
         new PluginPlayerListener(this);
 
