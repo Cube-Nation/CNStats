@@ -1,6 +1,7 @@
 package de.derflash.plugins.cnstats;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.persistence.PersistenceException;
@@ -9,16 +10,35 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class CNStats extends JavaPlugin {
 	
-	
+    HashMap<String, Logins> tempLogins = new HashMap<String, Logins>();
+    ArrayList<Logins> finalLogins = new ArrayList<Logins>();
+
     public void onDisable() {
-        System.out.println(this + " is now disabled!");
+        saveFinalLogins();
+        saveTempLogins();
     }
 
     public void onEnable() {        
         setupDatabase();
 
         new PluginPlayerListener(this);
+        
+        getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+            public void run() {
+                saveFinalLogins();
+            }
+        }, 12000L, 12000L);
 
+    }
+    
+    private void saveFinalLogins() {
+        getDatabase().save(finalLogins);
+        finalLogins.clear();
+    }
+    
+    private void saveTempLogins() {
+        getDatabase().save(tempLogins.values());
+        tempLogins.clear();
     }
     
     private void setupDatabase() {

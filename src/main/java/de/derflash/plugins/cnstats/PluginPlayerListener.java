@@ -22,10 +22,13 @@ public class PluginPlayerListener implements Listener {
 	
 	@EventHandler
 	public void onPlayerQuit(PlayerQuitEvent event) {
-		Logins oldLogin = plugin.getDatabase().find(Logins.class).setMaxRows(1).orderBy("id desc").where().ieq("playerName", event.getPlayer().getName()).findUnique();
-        if (oldLogin != null) {
-        	oldLogin.setLogoutTime(new Date());
-            plugin.getDatabase().save(oldLogin);
+	    String player = event.getPlayer().getName();
+	    Logins login = plugin.tempLogins.get(player);
+	    if (login == null) login = plugin.getDatabase().find(Logins.class).setMaxRows(1).orderBy("id desc").where().ieq("playerName", event.getPlayer().getName()).findUnique();
+        if (login != null) {
+            login.setLogoutTime(new Date());
+            plugin.finalLogins.add(login);
+            plugin.tempLogins.remove(player);
         }
 	}
 	
@@ -37,9 +40,7 @@ public class PluginPlayerListener implements Listener {
 		login.setPlayer(player);
 		login.setLoginTime(new Date());
 		
-        plugin.getDatabase().save(login);
-
+		plugin.tempLogins.put(player.getName(), login);
 	}
 
 }
-
