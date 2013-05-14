@@ -32,12 +32,22 @@ public class CNStats extends JavaPlugin {
     }
     
     private void saveFinalLogins() {
-        getDatabase().save(finalLogins);
+        final Logins[] _finalLogins = finalLogins.toArray(new Logins[0]);
+        getServer().getScheduler().runTaskAsynchronously(this, new Runnable() {
+            public void run() {
+                getDatabase().save(_finalLogins);
+            }
+        });
         finalLogins.clear();
     }
     
     private void saveTempLogins() {
-        getDatabase().save(tempLogins.values());
+        final Logins[] _tempLogins = tempLogins.values().toArray(new Logins[0]);
+        getServer().getScheduler().runTaskAsynchronously(this, new Runnable() {
+            public void run() {
+                getDatabase().save(_tempLogins);
+            }
+        });
         tempLogins.clear();
     }
     
