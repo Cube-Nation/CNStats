@@ -196,7 +196,7 @@ public class TimeService {
     }
 
     /**
-     * Set log in time for a player to cache.
+     * Calculate online time for player.
      * 
      * @param playerName
      *            case-insensitive player name
@@ -214,9 +214,22 @@ public class TimeService {
                 .isNotNull("logout_time").findIterate();
 
         float milliTime = 0;
+        // database
         while (findIterate.hasNext()) {
             OnlineTime time = findIterate.next();
             milliTime += time.getLogoutTime().getTime() - time.getLoginTime().getTime();
+        }
+
+        // cached closed
+        for (OnlineTime time : closedTimes) {
+            if (time.getPlayerName().equalsIgnoreCase(playerName)) {
+                milliTime += time.getLogoutTime().getTime() - time.getLoginTime().getTime();
+            }
+        }
+
+        // cached open
+        if (openTimes.containsKey(playerName)) {
+            milliTime += new Date().getTime() - openTimes.get(playerName).getLoginTime().getTime();
         }
 
         int hours = 0;
