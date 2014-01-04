@@ -157,7 +157,7 @@ public class TimeService {
 
         OnlineTime loginTime = openTimes.get(playerName);
         if (loginTime == null) {
-            loginTime = conn.find(OnlineTime.class).setMaxRows(1).orderBy("id desc").where().ieq("playername", playerName).findUnique();
+            loginTime = conn.find(OnlineTime.class).setMaxRows(1).orderBy("id desc").where().ieq("playe_rname", playerName).findUnique();
         }
 
         if (loginTime != null) {
@@ -210,8 +210,8 @@ public class TimeService {
             return 0;
         }
 
-        QueryIterator<OnlineTime> findIterate = conn.find(OnlineTime.class).where().ieq("playername", playerName).isNotNull("logintime")
-                .isNotNull("logouttime").findIterate();
+        QueryIterator<OnlineTime> findIterate = conn.find(OnlineTime.class).where().ieq("player_name", playerName).isNotNull("login_time")
+                .isNotNull("logout_time").findIterate();
 
         float milliTime = 0;
         while (findIterate.hasNext()) {
