@@ -12,6 +12,7 @@ import javax.persistence.PersistenceException;
 import org.bukkit.Bukkit;
 
 import com.avaje.ebean.EbeanServer;
+import com.avaje.ebean.QueryIterator;
 import com.avaje.ebean.Transaction;
 
 import de.cubenation.plugins.cnstats.CnStats;
@@ -29,8 +30,8 @@ public class TimeService {
     private final EbeanServer conn;
     private final Logger log;
 
-    private HashMap<String, OnlineTime> openTimes = new HashMap<String, OnlineTime>();
-    private ArrayList<OnlineTime> closedTimes = new ArrayList<OnlineTime>();
+    private final HashMap<String, OnlineTime> openTimes = new HashMap<String, OnlineTime>();
+    private final ArrayList<OnlineTime> closedTimes = new ArrayList<OnlineTime>();
 
     /**
      * Initial with external services.
@@ -192,5 +193,37 @@ public class TimeService {
         openTimes.put(playerName, login);
 
         return true;
+    }
+
+    /**
+     * Set log in time for a player to cache.
+     * 
+     * @param playerName
+     *            case-insensitive player name
+     * @return Player online time in hours. Returns 0 if playerName is null or
+     *         empty.
+     * 
+     * @since 1.1
+     */
+    public int getOnlineTime(String playerName) {
+        if (playerName == null || playerName.isEmpty()) {
+            return 0;
+        }
+
+        QueryIterator<OnlineTime> findIterate = conn.find(OnlineTime.class).where().ieq("playername", playerName).isNotNull("logintime")
+                .isNotNull("logouttime").findIterate();
+
+        float milliTime = 0;
+        while (findIterate.hasNext()) {
+            OnlineTime time = findIterate.next();
+            milliTime += time.getLogoutTime().getTime() - time.getLoginTime().getTime();
+        }
+
+        int hours = 0;
+        if (milliTime > 0) {
+            hours = Math.round(milliTime / (3600 * 1000));
+        }
+
+        return hours;
     }
 }

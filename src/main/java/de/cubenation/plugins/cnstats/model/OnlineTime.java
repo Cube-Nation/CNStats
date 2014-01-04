@@ -13,13 +13,13 @@ public class OnlineTime {
     @Id
     private int id;
 
-    @Column(name = "playername", nullable = false)
+    @Column(name = "player_name", nullable = false)
     private String playerName;
 
-    @Column(name = "logintime", nullable = false)
+    @Column(name = "login_time", nullable = false)
     private Date loginTime;
 
-    @Column(name = "logouttime")
+    @Column(name = "logout_time")
     private Date logoutTime;
 
     public void setId(int id) {

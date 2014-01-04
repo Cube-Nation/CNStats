@@ -24,6 +24,7 @@
 				<directory>${basedir}/src/main/resources</directory>
 				<filtering>true</filtering>
 				<includes>
+					<include>CNStats_messages.properties</include>
 					<include>plugin.yml</include>
 				</includes>
 			</resource>

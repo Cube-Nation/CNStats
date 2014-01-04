@@ -9,3 +9,12 @@ version: '${project.version}'
 
 depend:
   - PluginUtils
+
+commands:
+    onlinetime:
+        description: onlinetime
+        usage: /onlinetime
+
+permissions:
+  cnbase.onlinetime:
+    description: ...
