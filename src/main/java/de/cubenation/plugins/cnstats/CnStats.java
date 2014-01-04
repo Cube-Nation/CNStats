@@ -31,7 +31,8 @@ public class CnStats extends BasePlugin {
 
     @Override
     protected void registerScheduledTasks(List<ScheduleTask> list) {
-        list.add(new ScheduleTask(new Thread("FinalLoginsSaver") {
+        list.add(new ScheduleTask(new Thread("ClosedOnlineTimeSaver") {
+            @Override
             public void run() {
                 timeService.saveClosedTimes();
             }

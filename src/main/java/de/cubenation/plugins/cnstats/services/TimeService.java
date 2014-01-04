@@ -1,6 +1,7 @@
 package de.cubenation.plugins.cnstats.services;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -56,29 +57,29 @@ public class TimeService {
      * @since 1.1
      */
     public final void saveClosedTimes() {
-        final OnlineTime[] closedTimesArray = closedTimes.toArray(new OnlineTime[] {});
         if (plugin.isEnabled()) {
+            final ArrayList<OnlineTime> closedTimesCopy = new ArrayList<OnlineTime>(closedTimes);
             Bukkit.getServer().getScheduler().runTaskAsynchronously(plugin, new Thread("ClosedTimeSaver") {
                 @Override
                 public void run() {
-                    saveClosedTimesCache(closedTimesArray);
+                    saveClosedTimesCache(closedTimesCopy);
                 }
             });
         } else {
-            saveClosedTimesCache(closedTimesArray);
+            saveClosedTimesCache(closedTimes);
         }
 
         closedTimes.clear();
     }
 
-    private boolean saveClosedTimesCache(OnlineTime[] closedTimesArray) {
-        if (closedTimesArray == null || closedTimesArray.length == 0) {
+    private boolean saveClosedTimesCache(Collection<OnlineTime> closedTimes) {
+        if (closedTimes == null || closedTimes.isEmpty()) {
             return false;
         }
 
         Transaction transaction = conn.beginTransaction();
         try {
-            conn.save(closedTimesArray, transaction);
+            conn.save(closedTimes.iterator(), transaction);
             transaction.commit();
 
             return true;
@@ -99,30 +100,30 @@ public class TimeService {
      * @since 1.1
      */
     public final void saveOpenTimes() {
-        final OnlineTime[] openTimesArray = openTimes.values().toArray(new OnlineTime[] {});
         if (plugin.isEnabled()) {
+            final ArrayList<OnlineTime> openTimesCopy = new ArrayList<OnlineTime>(openTimes.values());
             Bukkit.getServer().getScheduler().runTaskAsynchronously(plugin, new Thread("OpenTimeSaver") {
                 @Override
                 public void run() {
-                    saveOpenTimesCache(openTimesArray);
+                    saveOpenTimesCache(openTimesCopy);
                 }
 
             });
         } else {
-            saveOpenTimesCache(openTimesArray);
+            saveOpenTimesCache(openTimes.values());
         }
 
         openTimes.clear();
     }
 
-    private boolean saveOpenTimesCache(OnlineTime[] openTimesArray) {
-        if (openTimesArray == null || openTimesArray.length == 0) {
+    private boolean saveOpenTimesCache(Collection<OnlineTime> openTimes) {
+        if (openTimes == null || openTimes.isEmpty()) {
             return false;
         }
 
         Transaction transaction = conn.beginTransaction();
         try {
-            conn.save(openTimesArray, transaction);
+            conn.save(openTimes.iterator(), transaction);
             transaction.commit();
 
             return true;
