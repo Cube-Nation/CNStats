@@ -7,17 +7,15 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.persistence.PersistenceException;
+import javax.persistence.OptimisticLockException;
 
 import org.bukkit.Bukkit;
 
 import com.avaje.ebean.EbeanServer;
 import com.avaje.ebean.QueryIterator;
-import com.avaje.ebean.Transaction;
 
 import de.cubenation.plugins.cnstats.CnStats;
 import de.cubenation.plugins.cnstats.model.OnlineTime;
-import de.cubenation.plugins.utils.EbeanHelper;
 
 /**
  * With this service, the player online times can be managed.
@@ -78,19 +76,14 @@ public class TimeService {
             return false;
         }
 
-        Transaction transaction = conn.beginTransaction();
         try {
-            conn.save(closedTimes.iterator(), transaction);
-            transaction.commit();
+            conn.save(closedTimes.iterator());
 
             return true;
-        } catch (PersistenceException e) {
+        } catch (OptimisticLockException e) {
             log.log(Level.SEVERE, "error on save closed times", e);
-            EbeanHelper.rollbackQuiet(transaction);
 
             return false;
-        } finally {
-            EbeanHelper.endQuiet(transaction);
         }
     }
 
@@ -122,19 +115,14 @@ public class TimeService {
             return false;
         }
 
-        Transaction transaction = conn.beginTransaction();
         try {
-            conn.save(openTimes.iterator(), transaction);
-            transaction.commit();
+            conn.save(openTimes.iterator());
 
             return true;
-        } catch (PersistenceException e) {
+        } catch (OptimisticLockException e) {
             log.log(Level.SEVERE, "error on save open times", e);
-            EbeanHelper.rollbackQuiet(transaction);
 
             return false;
-        } finally {
-            EbeanHelper.endQuiet(transaction);
         }
     }
 
