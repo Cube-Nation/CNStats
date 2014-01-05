@@ -9,13 +9,11 @@ import java.util.logging.Logger;
 
 import javax.persistence.OptimisticLockException;
 
-import org.bukkit.Bukkit;
-
 import com.avaje.ebean.EbeanServer;
 import com.avaje.ebean.QueryIterator;
 
-import de.cubenation.plugins.cnstats.CnStats;
 import de.cubenation.plugins.cnstats.model.OnlineTime;
+import de.cubenation.plugins.utils.pluginapi.ScheduleManager;
 
 /**
  * With this service, the player online times can be managed.
@@ -24,7 +22,6 @@ import de.cubenation.plugins.cnstats.model.OnlineTime;
  */
 public class TimeService {
     // external services
-    private final CnStats plugin;
     private final EbeanServer conn;
     private final Logger log;
 
@@ -43,8 +40,7 @@ public class TimeService {
      * 
      * @since 1.1
      */
-    public TimeService(CnStats plugin, EbeanServer conn, Logger log) {
-        this.plugin = plugin;
+    public TimeService(EbeanServer conn, Logger log) {
         this.conn = conn;
         this.log = log;
     }
@@ -56,9 +52,21 @@ public class TimeService {
      * @since 1.1
      */
     public final void saveClosedTimes() {
-        if (plugin.isEnabled()) {
+        saveClosedTimes(false);
+    }
+
+    /**
+     * Saves and clear cached online times with log out date is set in an
+     * asyncron bukkit task.
+     * 
+     * @param now
+     *            If true, not in a asyncron bukkit task.
+     * @since 1.1
+     */
+    public final void saveClosedTimes(boolean now) {
+        if (!now) {
             final ArrayList<OnlineTime> closedTimesCopy = new ArrayList<OnlineTime>(closedTimes);
-            Bukkit.getServer().getScheduler().runTaskAsynchronously(plugin, new Thread("ClosedTimeSaver") {
+            ScheduleManager.runTaskAsynchronously(new Thread("ClosedTimeSaver") {
                 @Override
                 public void run() {
                     saveClosedTimesCache(closedTimesCopy);
@@ -94,14 +102,26 @@ public class TimeService {
      * @since 1.1
      */
     public final void saveOpenTimes() {
-        if (plugin.isEnabled()) {
+        saveOpenTimes(false);
+    }
+
+    /**
+     * Saves and clear cached online times with log out date is not set in an
+     * asyncron bukkit task.
+     * 
+     * @param now
+     *            If true, not in a asyncron bukkit task.
+     * 
+     * @since 1.1
+     */
+    public final void saveOpenTimes(boolean now) {
+        if (!now) {
             final ArrayList<OnlineTime> openTimesCopy = new ArrayList<OnlineTime>(openTimes.values());
-            Bukkit.getServer().getScheduler().runTaskAsynchronously(plugin, new Thread("OpenTimeSaver") {
+            ScheduleManager.runTaskAsynchronously(new Thread("OpenTimeSaver") {
                 @Override
                 public void run() {
                     saveOpenTimesCache(openTimesCopy);
                 }
-
             });
         } else {
             saveOpenTimesCache(openTimes.values());

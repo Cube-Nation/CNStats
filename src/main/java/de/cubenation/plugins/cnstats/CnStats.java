@@ -17,13 +17,13 @@ public class CnStats extends BasePlugin {
 
     @Override
     protected void initialCustomServices() {
-        timeService = new TimeService(this, getDatabase(), getLogger());
+        timeService = new TimeService(getDatabase(), getLogger());
     }
 
     @Override
     protected void stopCustomServices() {
-        timeService.saveClosedTimes();
-        timeService.saveOpenTimes();
+        timeService.saveClosedTimes(true);
+        timeService.saveOpenTimes(true);
     }
 
     @Override
