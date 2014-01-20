@@ -9,10 +9,14 @@ import java.util.logging.Logger;
 
 import javax.persistence.OptimisticLockException;
 
+import org.apache.commons.lang.Validate;
+
 import com.avaje.ebean.EbeanServer;
 import com.avaje.ebean.QueryIterator;
 
 import de.cubenation.plugins.cnstats.model.OnlineTime;
+import de.cubenation.plugins.cnstats.model.exception.NoLastOnlineTimeFoundException;
+import de.cubenation.plugins.utils.BukkitUtils;
 import de.cubenation.plugins.utils.pluginapi.ScheduleManager;
 
 /**
@@ -64,25 +68,25 @@ public class TimeService {
      * @since 1.1
      */
     public final void saveClosedTimes(boolean now) {
-        if (!now) {
-            final ArrayList<OnlineTime> closedTimesCopy = new ArrayList<OnlineTime>(closedTimes);
-            ScheduleManager.runTaskAsynchronously(new Thread("ClosedTimeSaver") {
-                @Override
-                public void run() {
-                    saveClosedTimesCache(closedTimesCopy);
-                }
-            });
-        } else {
-            saveClosedTimesCache(closedTimes);
-        }
+        synchronized (closedTimes) {
+            if (!now) {
+                final ArrayList<OnlineTime> closedTimesCopy = new ArrayList<OnlineTime>(closedTimes);
+                ScheduleManager.runTaskAsynchronously(new Thread("ClosedTimeSaver") {
+                    @Override
+                    public void run() {
+                        saveClosedTimesCache(closedTimesCopy);
+                    }
+                });
+            } else {
+                saveClosedTimesCache(closedTimes);
+            }
 
-        closedTimes.clear();
+            closedTimes.clear();
+        }
     }
 
     private boolean saveClosedTimesCache(Collection<OnlineTime> closedTimes) {
-        if (closedTimes == null || closedTimes.isEmpty()) {
-            return false;
-        }
+        Validate.notEmpty(closedTimes, "closed times cannot be null or empty");
 
         try {
             conn.save(closedTimes.iterator());
@@ -115,25 +119,25 @@ public class TimeService {
      * @since 1.1
      */
     public final void saveOpenTimes(boolean now) {
-        if (!now) {
-            final ArrayList<OnlineTime> openTimesCopy = new ArrayList<OnlineTime>(openTimes.values());
-            ScheduleManager.runTaskAsynchronously(new Thread("OpenTimeSaver") {
-                @Override
-                public void run() {
-                    saveOpenTimesCache(openTimesCopy);
-                }
-            });
-        } else {
-            saveOpenTimesCache(openTimes.values());
-        }
+        synchronized (openTimes) {
+            if (!now) {
+                final ArrayList<OnlineTime> openTimesCopy = new ArrayList<OnlineTime>(openTimes.values());
+                ScheduleManager.runTaskAsynchronously(new Thread("OpenTimeSaver") {
+                    @Override
+                    public void run() {
+                        saveOpenTimesCache(openTimesCopy);
+                    }
+                });
+            } else {
+                saveOpenTimesCache(openTimes.values());
+            }
 
-        openTimes.clear();
+            openTimes.clear();
+        }
     }
 
     private boolean saveOpenTimesCache(Collection<OnlineTime> openTimes) {
-        if (openTimes == null || openTimes.isEmpty()) {
-            return false;
-        }
+        Validate.notEmpty(openTimes, "open times cannot be null or empty");
 
         try {
             conn.save(openTimes.iterator());
@@ -152,28 +156,29 @@ public class TimeService {
      * 
      * @param playerName
      *            case-insensitive player name
-     * @return True, if successful, otherwise false. Also false, if playerName
-     *         is null or empty an online time was not exists in cache or
-     *         database.
+     * @return True, if successful, otherwise false. Also false, if an online
+     *         time was not exists in cache or database.
      * 
      * @since 1.1
      */
     public final boolean setLogOut(String playerName) {
-        if (playerName == null || playerName.isEmpty()) {
-            return false;
-        }
+        Validate.notEmpty(playerName, "player name cannot be null or empty");
 
-        OnlineTime loginTime = openTimes.get(playerName);
-        if (loginTime == null) {
-            loginTime = conn.find(OnlineTime.class).setMaxRows(1).orderBy("id desc").where().ieq("playe_rname", playerName).findUnique();
-        }
+        synchronized (openTimes) {
+            OnlineTime loginTime = openTimes.get(playerName);
+            if (loginTime == null) {
+                loginTime = conn.find(OnlineTime.class).where().ieq("player_name", playerName).orderBy("id desc").setMaxRows(1).findUnique();
+            }
 
-        if (loginTime != null) {
-            loginTime.setLogoutTime(new Date());
-            closedTimes.add(loginTime);
-            openTimes.remove(playerName);
+            if (loginTime != null) {
+                loginTime.setLogoutTime(new Date());
+                synchronized (closedTimes) {
+                    closedTimes.add(loginTime);
+                }
+                openTimes.remove(playerName);
 
-            return true;
+                return true;
+            }
         }
 
         return false;
@@ -184,21 +189,20 @@ public class TimeService {
      * 
      * @param playerName
      *            case-insensitive player name
-     * @return True, if successful, otherwise false, if playerName is null or
-     *         empty.
+     * @return True, if successful, otherwise false.
      * 
      * @since 1.1
      */
     public final boolean addLogIn(String playerName) {
-        if (playerName == null || playerName.isEmpty()) {
-            return false;
-        }
+        Validate.notEmpty(playerName, "player name cannot be null or empty");
 
         OnlineTime login = new OnlineTime();
         login.setPlayerName(playerName);
         login.setLoginTime(new Date());
 
-        openTimes.put(playerName, login);
+        synchronized (openTimes) {
+            openTimes.put(playerName, login);
+        }
 
         return true;
     }
@@ -208,15 +212,12 @@ public class TimeService {
      * 
      * @param playerName
      *            case-insensitive player name
-     * @return Player online time in hours. Returns 0 if playerName is null or
-     *         empty.
+     * @return Player online time in hours.
      * 
      * @since 1.1
      */
     public int getOnlineTime(String playerName) {
-        if (playerName == null || playerName.isEmpty()) {
-            return 0;
-        }
+        Validate.notEmpty(playerName, "player name cannot be null or empty");
 
         QueryIterator<OnlineTime> findIterate = conn.find(OnlineTime.class).where().ieq("player_name", playerName).isNotNull("login_time")
                 .isNotNull("logout_time").findIterate();
@@ -229,15 +230,19 @@ public class TimeService {
         }
 
         // cached closed
-        for (OnlineTime time : closedTimes) {
-            if (time.getPlayerName().equalsIgnoreCase(playerName)) {
-                milliTime += time.getLogoutTime().getTime() - time.getLoginTime().getTime();
+        synchronized (closedTimes) {
+            for (OnlineTime time : closedTimes) {
+                if (time.getPlayerName().equalsIgnoreCase(playerName)) {
+                    milliTime += time.getLogoutTime().getTime() - time.getLoginTime().getTime();
+                }
             }
         }
 
         // cached open
-        if (openTimes.containsKey(playerName)) {
-            milliTime += new Date().getTime() - openTimes.get(playerName).getLoginTime().getTime();
+        synchronized (openTimes) {
+            if (openTimes.containsKey(playerName)) {
+                milliTime += new Date().getTime() - openTimes.get(playerName).getLoginTime().getTime();
+            }
         }
 
         int hours = 0;
@@ -246,5 +251,52 @@ public class TimeService {
         }
 
         return hours;
+    }
+
+    /**
+     * Return the last online time for a player.
+     * 
+     * @param playerName
+     *            case-insensitive player name
+     * @return last online time
+     * @throws NoLastOnlineTimeFoundException
+     *             if no time was found for player
+     * 
+     * @since 1.1
+     */
+    public Date getLastLoginTime(String playerName) throws NoLastOnlineTimeFoundException {
+        Validate.notEmpty(playerName, "player name cannot be null or empty");
+
+        if (BukkitUtils.isPlayerOnline(playerName)) {
+            return new Date();
+        }
+
+        synchronized (openTimes) {
+            if (openTimes.containsKey(playerName)) {
+                return new Date();
+            }
+        }
+
+        synchronized (closedTimes) {
+            Date lastDate = null;
+            for (OnlineTime time : closedTimes) {
+                if (time.getPlayerName().equalsIgnoreCase(playerName)) {
+                    if (lastDate == null || time.getLogoutTime().after(lastDate)) {
+                        lastDate = time.getLogoutTime();
+                    }
+                }
+            }
+            if (lastDate != null) {
+                return lastDate;
+            }
+        }
+
+        OnlineTime onlineTime = conn.find(OnlineTime.class).where().ieq("player_name", playerName).orderBy("logout_time desc").setMaxRows(1).findUnique();
+
+        if (onlineTime != null) {
+            return onlineTime.getLogoutTime();
+        }
+
+        throw new NoLastOnlineTimeFoundException(playerName);
     }
 }
