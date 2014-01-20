@@ -1,5 +1,7 @@
 package de.cubenation.plugins.cnstats.model.exception;
 
+import org.apache.commons.lang.Validate;
+
 import de.cubenation.plugins.utils.chatapi.ResourceConverter;
 import de.cubenation.plugins.utils.exceptionapi.PlayerException;
 
@@ -12,7 +14,8 @@ public class NoLastOnlineTimeFoundException extends PlayerException {
 
     @Override
     public String getLocaleMessage(ResourceConverter converter) {
-        // TODO Auto-generated method stub
-        return null;
+        Validate.notNull(converter, "converter cannot be null");
+
+        return converter.convert("player.lastOnlineTimeNotFound", getPlayerName());
     }
 }
